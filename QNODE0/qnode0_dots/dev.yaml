@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+  qnode0_app:
+    image: smartquail/qnode0_app:latest
+    environment:
+      - PORT=9000
+    env_file:
+      - .env_dev 
+    depends_on:
+      - smartquaildb
+    expose:
+    - 9000
+    ports:
+      - "9000:9000"
+    volumes:
+      - static-data-qnode0:/qnode0.0_app/qnode0_app/staticfiles
+      - static-data-qnode0:/qnode0.0_app/qnode0_app/media
+   # command: sh -c "chmod +x /scripts/migrations.sh && sh /scripts/migrations.sh && sh /scripts/run.sh"
+
+  smartquaildb:
+    image: postgres:13-alpine
+    restart: always
+    command: -p 5432
+    env_file:
+      - .env_dev
+    ports:
+      - "5432:5432"
+    expose:
+     - 5432
+    volumes:
+      - smartquaildb_data:/var/lib/postgresql/data/
+      
+
+  qnode0_proxy:
+    image: smartquail/qnode0_nginx:dev
+    restart: always
+    ports:
+    - "80:80"
+    depends_on:
+    - qnode0_app
+    volumes: 
+    - static-data-qnode0:/qnode0.0_app/qnode0_app/staticfiles
+    - static-data-qnode0:/qnode0.0_app/qnode0_app/media
+   
+
+  redis:
+    image: redis:3.0
+    restart: always
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    entrypoint: redis-server --appendonly yes --port 6379
+
+volumes:
+  smartquaildb_data:
+  redis_data:
+  static-data-qnode0:
