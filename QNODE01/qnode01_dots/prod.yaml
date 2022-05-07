@@ -1,8 +1,8 @@
 version: '3.9'
 
 services:
-  qnode0_app:
-    image: smartquail/qnode0_app:latest
+  qnode01_app:
+    image: smartquail/qnode01_app:latest
     environment:
       - PORT=9000
     env_file:
@@ -32,8 +32,8 @@ services:
       - smartquaildb_data:/var/lib/postgresql/data/
       
 
-  qnode0_proxy:
-    image: smartquail/qnode0_nginx:prod
+  qnode01_proxy:
+    image: smartquail/qnode01_nginx:prod
     restart: always
     env_file:
       - .env_prod 
@@ -41,7 +41,7 @@ services:
     - "80:80"
     - "443:443"
     depends_on:
-    - qnode0_app
+    - qnode01_app
     volumes: 
     - nginx_conf:/etc/nginx/sites
     - nginx_ssl:/etc/nginx/ssl
@@ -51,24 +51,24 @@ services:
     - static-data-qnode0:/qnode0.0_app/qnode0_app/media
 
   certbot:
-    image: smartquail/qnode0_certbot:0.1
+    image: smartquail/qnode01_certbot:0.1
     env_file:
       - .env_prod 
     volumes:
       - letsencrypt_certs:/etc/letsencrypt
       - certbot_acme_challenge:/var/www/certbot
     depends_on:
-      - qnode0_proxy
+      - qnode01_proxy
 
   cron:
-    image: smartquail/qnode0_cron:0.1
+    image: smartquail/qnode01_cron:0.1
     environment:
       COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workdir:ro
     depends_on:
-      - qnode0_proxy
+      - qnode01_proxy
       - certbot
    
 
