@@ -17,6 +17,8 @@ services:
       - static-data-qnode01:/qnode0.1_app/qnode01_app/staticfiles
       - static-data-qnode01:/qnode0.1_app/qnode01_app/media
    # command: sh -c "chmod +x /scripts/migrations.sh && sh /scripts/migrations.sh && sh /scripts/run.sh"
+    networks: 
+      - lansmartquail
 
   smartquaildb:
     image: postgres:13-alpine
@@ -30,18 +32,22 @@ services:
      - 5432
     volumes:
       - smartquaildb_data:/var/lib/postgresql/data/
+    networks: 
+      - lansmartquail
       
 
   qnode0_proxy:
     image: smartquail/qnode01_nginx:dev
     restart: always
     ports:
-    - "80:80"
+      - "80:80"
     depends_on:
-    - qnode01_app
+      - qnode01_app
     volumes: 
-    - static-data-qnode01:/qnode0.1_app/qnode01_app/staticfiles
-    - static-data-qnode01:/qnode0.1_app/qnode01_app/media
+      - static-data-qnode01:/qnode0.1_app/qnode01_app/staticfiles
+      - static-data-qnode01:/qnode0.1_app/qnode01_app/media
+    networks: 
+      - lansmartquail
    
 
   redis:
@@ -54,8 +60,14 @@ services:
     volumes:
       - redis_data:/data
     entrypoint: redis-server --appendonly yes --port 6379
+    networks: 
+      - lansmartquail
 
 volumes:
   smartquaildb_data:
   redis_data:
   static-data-qnode01:
+
+networks: 
+   lansmartquail:
+       driver: bridge
