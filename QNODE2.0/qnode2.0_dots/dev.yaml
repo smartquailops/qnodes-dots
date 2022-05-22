@@ -1,0 +1,126 @@
+version: '3.9'
+
+services:
+  qnode20_app:
+    image: smartquail/qnode20_app:latest
+    restart: always
+    env_file:
+      - .env_dev 
+    depends_on:
+      - smartquaildb
+      - redis
+    links:
+      - "smartquaildb"
+      - "worker"
+    expose:
+    - 587
+    - 25
+    ports:
+      - "587:587"
+      - "25:25"
+    volumes:
+      - static-data-qnode20:/qnode2.0_app/qnode20_app/staticfiles
+      - static-data-qnode20:/qnode2.0_app/qnode20_app/media
+   # command: sh -c "chmod +x /scripts/migrations.sh && sh /scripts/migrations.sh && sh /scripts/run.sh"
+    networks: 
+      - lansmartquail
+
+  smartquaildb:
+    image: postgres:13-alpine
+    restart: always
+    command: -p 5432
+    env_file:
+      - .env_dev
+    ports:
+      - "5432:5432"
+    expose:
+     - 5432
+    volumes:
+      - smartquaildb_data:/var/lib/postgresql/data/
+    networks: 
+      - lansmartquail
+      
+
+  qnode0_proxy:
+    image: smartquail/qnode20_nginx:dev
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - qnode20_app
+      - rabbitmq
+      - worker
+    links:
+      - "rabbitmq"
+      - "worker"
+    volumes: 
+      - static-data-qnode20:/qnode2.0_app/qnode20_app/staticfiles
+      - static-data-qnode20:/qnode2.0_app/qnode20_app/media
+    networks: 
+      - lansmartquail
+   
+  redis:
+    image: redis:3.0
+    restart: always
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env_dev 
+    volumes:
+      - redis_data:/data
+    entrypoint: redis-server --appendonly yes --port 6379
+    networks: 
+      - lansmartquail
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    command: rabbitmq-server
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+    - rabbitmq-data:/var/lib/rabbitmq
+    - rabbitmq-data:/var/log/rabbitmq
+    expose:
+      - 5672
+      - 15672
+    networks:
+        - lansmartquail
+
+  worker:
+    image: smartquail/qnode20_app:latest
+    command: ['celery','-A', 'qnode20_app','worker', '-l', 'info']
+    restart: always
+    environment:
+      - PORT=9000
+    ports:
+      - "9000:9000"
+    env_file:
+      - .env_dev 
+    volumes:
+      - static-data-qnode20:/qnode20_app/
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+        - lansmartquail
+    
+  mailhog:
+     image: mailhog/mailhog
+     expose:
+       - 1025
+     ports: 
+       - 1025:1025 # smtp server
+       - 8025:8025 # web ui
+
+volumes:
+  smartquaildb_data:
+  redis_data:
+  static-data-qnode20:
+  rabbitmq-data:
+
+networks: 
+   lansmartquail:
+       driver: bridge

@@ -1,8 +1,8 @@
 version: '3.9'
 
 services:
-  qnode11_app:
-    image: smartquail/qnode11_app:latest
+  qnode20_app:
+    image: smartquail/qnode20_app:latest
     environment:
       - PORT=9000
     env_file:
@@ -14,8 +14,8 @@ services:
     ports:
       - "9000:9000"
     volumes:
-      - static-data-qnode11:/qnode1.1app/qnode11_app/staticfiles
-      - static-data-qnode11:/qnode1.1_app/qnode11_app/media
+      - static-data-qnode20:/qnode2.0_app/qnode20_app/staticfiles
+      - static-data-qnode20:/qnode2.0_app/qnode20_app/media
    # command: sh -c "chmod +x /scripts/migrations.sh && sh /scripts/migrations.sh && sh /scripts/run.sh"
 
   smartquaildb:
@@ -32,8 +32,8 @@ services:
       - smartquaildb_data:/var/lib/postgresql/data/
       
 
-  qnode11_proxy:
-    image: smartquail/qnode11_nginx:prod
+  qnode20_proxy:
+    image: smartquail/qnode20_nginx:prod
     restart: always
     env_file:
       - .env_prod 
@@ -41,7 +41,7 @@ services:
     - "80:80"
     - "443:443"
     depends_on:
-    - qnode0_app
+    - qnode20_app
     volumes: 
     - nginx_conf:/etc/nginx/sites
     - nginx_ssl:/etc/nginx/ssl
@@ -51,7 +51,7 @@ services:
     - static-data-qnode11:/qnode1.1_app/qnode11_app/media
 
   certbot:
-    image: smartquail/qnode11_certbot:0.1
+    image: smartquail/qnode20_certbot:0.1
     env_file:
       - .env_prod 
     volumes:
@@ -61,7 +61,7 @@ services:
       - qnode0_proxy
 
   cron:
-    image: smartquail/qnode11_cron:0.1
+    image: smartquail/qnode20_cron:0.1
     environment:
       COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
     volumes:
@@ -100,8 +100,8 @@ services:
         - lansmartquail
 
   worker:
-    image: smartquail/qnode11_app:latest
-    command: ['celery','-A', 'qnode11_app','worker', '-l', 'info']
+    image: smartquail/qnode20_app:latest
+    command: ['celery','-A', 'qnode20_app','worker', '-l', 'info']
     restart: always
     environment:
       - PORT=9000
@@ -110,7 +110,7 @@ services:
     env_file:
       - .env_prod
     volumes:
-      - static-data-qnode11:/qnode11_app/
+      - static-data-qnode20:/qnode20_app/
     depends_on:
       - redis
       - rabbitmq
@@ -120,7 +120,7 @@ services:
 volumes:
   smartquaildb_data:
   redis_data:
-  static-data-qnode11:
+  static-data-qnode20:
   nginx_conf:
   nginx_ssl:
   certbot_acme_challenge:

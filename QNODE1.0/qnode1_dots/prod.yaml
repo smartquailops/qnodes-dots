@@ -3,62 +3,75 @@ version: '3.9'
 services:
   qnode10_app:
     image: smartquail/qnode10_app:latest
-    restart: always
+    environment:
+      - PORT=9000
     env_file:
-      - .env_prod
+      - .env_prod 
     depends_on:
       - smartquaildb
-      - redis
-    links:
-      - "smartquaildb"
-      - "worker"
     expose:
-    - 587
-    - 25
+    - 9000
     ports:
-      - "587:587"
-      - "25:25"
+      - "9000:9000"
     volumes:
       - static-data-qnode10:/qnode1.0_app/qnode10_app/staticfiles
       - static-data-qnode10:/qnode1.0_app/qnode10_app/media
    # command: sh -c "chmod +x /scripts/migrations.sh && sh /scripts/migrations.sh && sh /scripts/run.sh"
-    networks: 
-      - lansmartquail
 
   smartquaildb:
     image: postgres:13-alpine
     restart: always
     command: -p 5432
     env_file:
-      - .env_prod
+      - .env_prod 
     ports:
       - "5432:5432"
     expose:
      - 5432
     volumes:
       - smartquaildb_data:/var/lib/postgresql/data/
-    networks: 
-      - lansmartquail
       
 
   qnode0_proxy:
-    image: smartquail/qnode10_nginx:dev
+    image: smartquail/qnode10_nginx:prod
     restart: always
+    env_file:
+      - .env_prod 
     ports:
-      - "80:80"
+    - "80:80"
+    - "443:443"
     depends_on:
-      - qnode10_app
-      - rabbitmq
-      - worker
-    links:
-      - "rabbitmq"
-      - "worker"
+    - qnode0_app
     volumes: 
-      - static-data-qnode10:/qnode1.0_app/qnode10_app/staticfiles
-      - static-data-qnode10:/qnode1.0_app/qnode10_app/media
-    networks: 
-      - lansmartquail
+    - nginx_conf:/etc/nginx/sites
+    - nginx_ssl:/etc/nginx/ssl
+    - letsencrypt_certs:/etc/letsencrypt
+    - certbot_acme_challenge:/var/www/certbot
+    - static-data-qnode10:/qnode1.0_app/qnode10_app/staticfiles
+    - static-data-qnode10:/qnode1.0_app/qnode10_app/media
+
+  certbot:
+    image: smartquail/qnode10_certbot:0.1
+    env_file:
+      - .env_prod 
+    volumes:
+      - letsencrypt_certs:/etc/letsencrypt
+      - certbot_acme_challenge:/var/www/certbot
+    depends_on:
+      - qnode0_proxy
+
+  cron:
+    image: smartquail/qnode10_cron:0.1
+    environment:
+      COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workdir:ro
+    depends_on:
+      - qnode10_proxy
+      - certbot
    
+
   redis:
     image: redis:3.0
     restart: always
@@ -66,13 +79,10 @@ services:
       - 6379
     ports:
       - "6379:6379"
-    env_file:
-      - .env_prod
     volumes:
       - redis_data:/data
     entrypoint: redis-server --appendonly yes --port 6379
-    networks: 
-      - lansmartquail
+
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -98,7 +108,7 @@ services:
     ports:
       - "9000:9000"
     env_file:
-      - .env_dev 
+      - .env_prod
     volumes:
       - static-data-qnode10:/qnode10_app/
     depends_on:
@@ -107,13 +117,12 @@ services:
     networks:
         - lansmartquail
   
-
 volumes:
   smartquaildb_data:
   redis_data:
   static-data-qnode10:
-  rabbitmq-data:
-
-networks: 
-   lansmartquail:
-       driver: bridge
+  nginx_conf:
+  nginx_ssl:
+  certbot_acme_challenge:
+  letsencrypt_certs:
+  
