@@ -1,8 +1,8 @@
 version: '3.9'
 
 services:
-  qnode10_app:
-    image: smartquail/qnode10_app:latest
+  qnode11_app:
+    image: smartquail/qnode11_app:latest
     restart: always
     env_file:
       - .env_prod
@@ -19,8 +19,8 @@ services:
       - "587:587"
       - "25:25"
     volumes:
-      - static-data-qnode10:/qnode1.0_app/qnode10_app/staticfiles
-      - static-data-qnode10:/qnode1.0_app/qnode10_app/media
+      - static-data-qnode10:/qnode1.1_app/qnode11_app/staticfiles
+      - static-data-qnode10:/qnode1.1_app/qnode11_app/media
    # command: sh -c "chmod +x /scripts/migrations.sh && sh /scripts/migrations.sh && sh /scripts/run.sh"
     networks: 
       - lansmartquail
@@ -30,7 +30,7 @@ services:
     restart: always
     command: -p 5432
     env_file:
-      - .env_prod
+       - .env_prod
     ports:
       - "5432:5432"
     expose:
@@ -42,20 +42,20 @@ services:
       
 
   qnode0_proxy:
-    image: smartquail/qnode10_nginx:dev
+    image: smartquail/qnode11_nginx:dev
     restart: always
     ports:
       - "80:80"
     depends_on:
-      - qnode10_app
+      - qnode11_app
       - rabbitmq
       - worker
     links:
       - "rabbitmq"
       - "worker"
     volumes: 
-      - static-data-qnode10:/qnode1.0_app/qnode10_app/staticfiles
-      - static-data-qnode10:/qnode1.0_app/qnode10_app/media
+      - static-data-qnode10:/qnode1.1_app/qnode11_app/staticfiles
+      - static-data-qnode10:/qnode1.1_app/qnode11_app/media
     networks: 
       - lansmartquail
    
@@ -67,7 +67,7 @@ services:
     ports:
       - "6379:6379"
     env_file:
-      - .env_prod
+      - .env_prod 
     volumes:
       - redis_data:/data
     entrypoint: redis-server --appendonly yes --port 6379
@@ -90,28 +90,35 @@ services:
         - lansmartquail
 
   worker:
-    image: smartquail/qnode10_app:latest
-    command: ['celery','-A', 'qnode10_app','worker', '-l', 'info']
+    image: smartquail/qnode11_app:latest
+    command: ['celery','-A', 'qnode11_app','worker', '-l', 'info']
     restart: always
     environment:
       - PORT=9000
     ports:
       - "9000:9000"
     env_file:
-      - .env_dev 
+      - .env_prod 
     volumes:
-      - static-data-qnode10:/qnode10_app/
+      - static-data-qnode11:/qnode11_app/
     depends_on:
       - redis
       - rabbitmq
     networks:
         - lansmartquail
-  
+    
+  mailhog:
+     image: mailhog/mailhog
+     expose:
+       - 1025
+     ports: 
+       - 1025:1025 # smtp server
+       - 8025:8025 # web ui
 
 volumes:
   smartquaildb_data:
   redis_data:
-  static-data-qnode10:
+  static-data-qnode11:
   rabbitmq-data:
 
 networks: 

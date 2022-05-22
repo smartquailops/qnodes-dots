@@ -8,23 +8,23 @@ COPY ./run.sh /run.sh
 
 
 ENV LISTEN_PORT=80
-ENV NGINX_PROXY=http://qnode10_app:9000
-ENV APP_HOST=qnode10_app
+ENV NGINX_PROXY=http://qnode11_app:9000
+ENV APP_HOST=qnode11_app
 ENV APP_PORT=9000
 
 USER root
 
-RUN mkdir -p /qnode1.0_app/qnode10_app/staticfiles && \
-    chmod 755 /qnode1.0_app/qnode10_app/staticfiles && \
-    mkdir -p /qnode1.0_app/qnode10_app/mediafiles && \
-    chmod 755 /qnode1.0_app/qnode10_app/mediafiles && \
+RUN mkdir -p /qnode1.1_app/qnode11_app/staticfiles && \
+    chmod 755 /qnode1.1_app/qnode11_app/staticfiles && \
+    mkdir -p /qnode1.1_app/qnode11_app/mediafiles && \
+    chmod 755 /qnode1.1_app/qnode11_app/mediafiles && \
 
     touch /etc/nginx/conf.d/default.conf && \
     chown nginx:nginx /etc/nginx/conf.d/default.conf && \
     chmod +x /run.sh
 
-VOLUME /qnode1.0_app/qnode10_app/staticfiles
-VOLUME /qnode1.0_app/qnode10_app/mediafiles
+VOLUME /qnode1.1_app/qnode11_app/staticfiles
+VOLUME /qnode1.1_app/qnode11_app/mediafiles
 
 USER nginx
 #ENTRYPOINT [ "/entrypoint.sh" ]
